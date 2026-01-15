@@ -11,10 +11,6 @@ document_cache
 chroma_db
 frontend/node_modules/
 
-# Modèles PyTorch (on utilise ONNX maintenant)
-*.pth
-backend/model/*.pth
-
 # C extensions
 *.so
 

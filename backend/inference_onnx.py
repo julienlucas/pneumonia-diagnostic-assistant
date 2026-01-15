@@ -1,12 +1,12 @@
-import torch
-from PIL import Image, ImageDraw, ImageFont
-import numpy as np
-import cv2
-import onnxruntime as ort
-import argparse
 import os
+import cv2
+import argparse
+import torch
 import torch.nn as nn
 import torchvision.models as tv_models
+import numpy as np
+import onnxruntime as ort
+from PIL import Image, ImageDraw, ImageFont
 
 PTH_MODEL_PATH = "./backend/model/resnet18_chest_xray_classifier_weights.pth"
 ONNX_MODEL_PATH = "./backend/model/resnet18_chest_xray_classifier_weights.onnx"

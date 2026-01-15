@@ -134,12 +134,12 @@ export default function Index() {
         >
           <div
             style={{ fontFamily: "'Gabarito', sans-serif" }}
-            className="font-normal bg-gradient-to-br from-[#2b3632] via-[#30574a] to-[#b2f7e1] text-white rounded-xl w-11 h-11 flex items-center justify-center text-5xl"
+            className="font-normal bg-gradient-to-br from-[#2b3632] via-[#30574a] to-[#b2f7e1] text-white rounded-xl w-11 h-11 flex items-center justify-center text-5xl pb-1.5"
           >
             +
           </div>
           <span style={{ fontFamily: "'Gabarito', sans-serif" }}>
-            Health Assistant
+            PneumoDiag
           </span>
         </CardTitle>
         <CardDescription className="text-center text-2xl font-bold text-black max-w-lg mx-auto leading-7">
@@ -275,7 +275,7 @@ export default function Index() {
             Étude de cas
           </CardTitle>
           <CardTitle variant="h3">
-            Détecter les signes de pneumonie malgrés un entraînement de modèle
+            Détecter les signes de pneumonie malgrés un jeu de données
             comportant très peu de radiographies
           </CardTitle>
           <CardTitle variant="h3">Le challenge</CardTitle>
