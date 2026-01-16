@@ -2,6 +2,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { cn } from "@/lib/utils";
 import { Upload, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ContactForm from "@/components/ui/contact-form";
 import { useState } from "react";
 
 const exampleImages = [
@@ -37,7 +38,14 @@ export default function Index() {
     "/static/BACTERIAL_PNEUMONIA/person78_bacteria_385.jpeg"
   );
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{label: string, confidence: number, real_confidence: number, fake_confidence: number, image?: string} | null>(null);
+  const [result, setResult] = useState<{
+    label: string;
+    confidence: number;
+    normal_confidence: number;
+    bacterial_confidence: number;
+    viral_confidence: number;
+    image?: string;
+  } | null>(null);
   const [selectedExampleImage, setSelectedExampleImage] = useState<string>("/static/Unknown.png");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,7 +274,10 @@ export default function Index() {
         </CardContent>
       </Card>
 
-      <Card className="mt-12 border-none max-w-2xl mx-auto shadow-none">
+      <Card
+        id="contact-form"
+        className="mt-12 border-none max-w-2xl mx-auto shadow-none"
+      >
         <CardContent className="p-0 border-none">
           <CardTitle
             variant="h2"
@@ -274,90 +285,95 @@ export default function Index() {
           >
             Étude de cas
           </CardTitle>
-          <CardTitle variant="h3">
-            Détecter les signes de pneumonie malgrés un jeu de données
-            comportant très peu de radiographies
+          <CardTitle variant="h3-card" className="mb-0 mt-4">
+            Le challenge
           </CardTitle>
-          <CardTitle variant="h3">Le challenge</CardTitle>
-          <p className="mb-4">
-            Créer un détecteur d'images Nano Banana Pro précis, rapidement et
-            peu couteux :
-          </p>
-          <ul className="list-disc list-inside mb-4 space-y-2">
+          <CardTitle variant="h3" className="font-medium">
+            Détecter les signes de pneumonie et leur degrès de viralité malgrés
+            un jeu de données comportant peu de radiographies
+          </CardTitle>
+          <ul className="list-disc list-inside mb-4 space-y-4">
             <li>
               <strong>
-                Pouvoir détecter sur tous les modèles de diffusion
-              </strong>{" "}
-              : Le modèle devait fonctionner sur Nano Banana Pro mais aussi
-              Midjourney, Stable Diffusion, DALL-E (des modèles de diffusion
-              aussi).
+                Détecter les pneumonies sur les radiographies de patients
+                <span>
+                  selon leur degrès de viralité.
+                </span>
+              </strong>
             </li>
             <li>
               <strong>Entraîner un modèle rapidement</strong> : Réutiliser les
-              connaissances pré-existantes d'un modèle de vision, d'abord le
-              MobileNetV3 Large sur ImageNet et tester de l'adapter à la
-              détection de fakes.
+              connaissances pré-existantes d'un modèle de vision adapté.
             </li>
             <li>
               <strong>Avoir un modèle faible latence</strong> : Devait pouvoir
-              fonctionner en quelque secondes sur un mobile.
+              fonctionner sur un mobile.
             </li>
             <li>
-              <strong>Créer un jeu de données</strong> : Combiner des datasets
-              scrappés sur Midjourney/DALL-E/SD et Nano Banana Pro pour une
-              détection généralisée.
+              <strong>
+                Réussir un entraînement avec un jeu de données peu étoffé
+              </strong>
             </li>
           </ul>
-          <CardTitle variant="h3">Résultats et évaluation</CardTitle>
-          <p className="mb-4">
-            Le système utilise une approche de transfer learning avec ResNet18
-            pour détecter les images générées par IA :
-          </p>
-          <ul className="list-inside mb-4 space-y-2">
+          <CardTitle variant="h3-card">Résultats et évaluation</CardTitle>
+          <ul className="list-inside mb-4 space-y-4">
             <li>
               <strong>
-                ⌛ Entraînement en seulement 2 minutes et juste avec un Mac Book
-                Pro M1
+                ⌛ <span>Entraînement en seulement 2 minutes</span> et juste
+                avec un Mac Book Pro M1
               </strong>{" "}
-              : Juste 1 seule passe sur le jeu de donnée!
+              juste avec 1 seule passe sur le jeu de donnée!
             </li>
             <li>
               <strong>
-                🧠 Méthode de fine-tuning du ResNet18 par Transfer Learning
+                🧠 Méthode de <span>fine-tuning d'un modèlé léger </span>, le
+                ResNet18 par Transfer Learning
               </strong>{" "}
-              : Fine-tuning de la dernière couche du modèle, le classifieur
-              uniquement (reste du modèle gelé), pour un entraînement ultra
-              rapide.
+              : tuning de la dernière couche du modèle, le classifieur
+              uniquement pour un entraînement ultra rapide et efficace.
             </li>
             <li>
               <strong>
-                🎯 Précision pour la classe 'Pneumonie bactérienne' : 89%
-              </strong>
-            </li>
-            <li>
-              <strong>🎯 Précision pour la classe 'Normal' : 75%</strong>
-            </li>
-            <li>
-              <strong>
-                🎯 Précision pour la classe 'Pneumonie virale' : 83%
+                🎯 Précision pour la classe 'Pneumonie bactérienne' :{" "}
+                <span>89%</span>
               </strong>
             </li>
             <li>
               <strong>
-                ⚡ Le modèle a une <span>très faible latence</span>, quasi
-                instannée.
+                🎯 Précision pour la classe 'Normal' : <span>75%</span>
               </strong>
+            </li>
+            <li>
+              <strong>
+                🎯 Précision pour la classe 'Pneumonie virale' :{" "}
+                <span>83%</span>
+              </strong>
+            </li>
+            <li>
+              <strong>
+                ⚡ Le modèle a une <span>très faible latence</span>.
+              </strong>
+              <img
+                src="/static/langsmith.png"
+                className="w-full h-auto rounded mt-3 border border-gray-100 rounded-sm"
+              />
+              <CardDescription className="italic text-center text-xs">
+                Montoring dans Langsmith
+              </CardDescription>
             </li>
           </ul>
           <p>Et voilà.</p>
-          <CardTitle variant="h3" className="mt-6 text-center">
-            On discute de votre projet?
+          <CardTitle
+            variant="h3"
+            className="mt-12 max-w-xl mx-auto text-center"
+          >
+            On discute de votre projet d'automatisation ou d'application?
           </CardTitle>
-          <div className="flex justify-center">
-            <Button className="mx-auto w-full" size="xl">
-              Me contacter
-            </Button>
-          </div>
+          <CardDescription className="text-center mb-4">
+            Remplissez le formulaire ci-dessous et je vous recontacte dans les
+            24-48 heures.
+          </CardDescription>
+          <ContactForm />
         </CardContent>
       </Card>
     </main>

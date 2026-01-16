@@ -150,7 +150,7 @@ def predict_with_saliency(pil_image):
     result_img = Image.fromarray(superimposed)
     draw_label(result_img, f"{pred_label} ({conf * 100:.1f}%)", text_color)
 
-    return result_img, pred_label, conf, normal_conf, bacterial_conf
+    return result_img, pred_label, conf, normal_conf, bacterial_conf, viral_conf
 
 def predict_with_gradcam(pil_image):
     return predict_with_saliency(pil_image)
