@@ -38,16 +38,29 @@ def load_fixed_font(width):
     candidates.append(os.path.join(pil_fonts_dir, "DejaVuSans.ttf"))
     for path in candidates:
         try:
-            return ImageFont.truetype(path, font_size)
+            return ImageFont.truetype(path, font_size), True, font_size
         except Exception:
             continue
-    return ImageFont.load_default()
+    return ImageFont.load_default(), False, font_size
 
 def draw_label(pil_image, text, rgb_color):
     draw = ImageDraw.Draw(pil_image)
     width, _height = pil_image.size
-    font = load_fixed_font(width)
-    draw.text((12, 12), text, fill=rgb_color, font=font)
+    font, is_truetype, font_size = load_fixed_font(width)
+    if is_truetype:
+        draw.text((12, 12), text, fill=rgb_color, font=font)
+        return
+    text_w, text_h = draw.textbbox((0, 0), text, font=font)[2:]
+    scale = max(1, int(round(font_size / max(1, text_h))))
+    render_w = max(1, int(text_w * scale))
+    render_h = max(1, int(text_h * scale))
+    mask = Image.new("L", (text_w, text_h), 0)
+    mask_draw = ImageDraw.Draw(mask)
+    mask_draw.text((0, 0), text, fill=255, font=font)
+    if scale != 1:
+        mask = mask.resize((render_w, render_h), resample=Image.NEAREST)
+    color_img = Image.new("RGBA", (render_w, render_h), rgb_color + (255,))
+    pil_image.paste(color_img, (12, 12), mask)
 
 def get_pytorch_model():
     global _pytorch_model
