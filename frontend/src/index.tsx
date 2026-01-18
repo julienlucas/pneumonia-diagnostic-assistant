@@ -290,28 +290,24 @@ export default function Index() {
           </CardTitle>
           <CardTitle variant="h3" className="font-medium">
             Détecter les signes de pneumonie et leur degrès de viralité malgrés
-            un jeu de données comportant peu de radiographies
+            un jeu de données peu éttoffé en radiographies
           </CardTitle>
           <ul className="list-disc list-inside mb-4 space-y-4">
             <li>
-              <strong>
-                Détecter les pneumonies sur les radiographies de patients
-                <span>
-                  selon leur degrès de viralité.
-                </span>
-              </strong>
+              <strong>Détecter les pneumonies de patients</strong>{" "}
+              selon leur degrès de viralité sur les radiographies.
             </li>
             <li>
-              <strong>Entraîner un modèle rapidement</strong> : Réutiliser les
-              connaissances pré-existantes d'un modèle de vision adapté.
+              <strong>Entraîner un modèle rapidement rapidement à moindre coût.</strong> Réutiliser les
+              connaissances pré-existantes d'un modèle de vision et l'adapter à la détection de pneumonies.
             </li>
             <li>
-              <strong>Avoir un modèle faible latence</strong> : Devait pouvoir
+              <strong>Avoir un modèle faible latence.</strong> Doit pouvoir
               fonctionner sur un mobile.
             </li>
             <li>
               <strong>
-                Réussir un entraînement avec un jeu de données peu étoffé
+                Avoir un modèle suffisament précis malgrés avec un jeu de données peu étoffé
               </strong>
             </li>
           </ul>
@@ -319,40 +315,34 @@ export default function Index() {
           <ul className="list-inside mb-4 space-y-4">
             <li>
               <strong>
-                ⌛ <span>Entraînement en seulement 2 minutes</span> et juste
-                avec un Mac Book Pro M1
-              </strong>{" "}
-              juste avec 1 seule passe sur le jeu de donnée!
+                ⌛ <span>Entraînement en seulement 2 minutes</span> et avec un hardware peu conséquent, seulement mon Mac Book Pro M1
+              </strong>. Et juste en 1 seule passe sur le jeu de données!
             </li>
             <li>
               <strong>
-                🧠 Méthode de <span>fine-tuning d'un modèlé léger </span>, le
-                ResNet18 par Transfer Learning
-              </strong>{" "}
-              : tuning de la dernière couche du modèle, le classifieur
-              uniquement pour un entraînement ultra rapide et efficace.
+                🧠 <span>Méthode de fine-tuning rapide d'un modèlé peu gourmand en ressources</span>, le
+                par Transfer Learning
+              </strong>. Réseau de neurones dense utile sur les petits jeux de données. Tuning de la dernière couche du modèle, uniquement le classifieur
+              pour un entraînement apportant un maximum de résultats rapidement.
             </li>
             <li>
               <strong>
-                🎯 Précision pour la classe 'Pneumonie bactérienne' :{" "}
-                <span>89%</span>
+                🎯 Au final facilement et sans optimisation du modèle, précision pour <span>la classe 'Pneumonie bactérienne' :{" "}
+                89%</span>
               </strong>
             </li>
             <li>
               <strong>
-                🎯 Précision pour la classe 'Normal' : <span>75%</span>
+                🎯 Précision pour <span>la classe 'Normal' : 75%</span>
               </strong>
             </li>
             <li>
               <strong>
-                🎯 Précision pour la classe 'Pneumonie virale' :{" "}
-                <span>83%</span>
+                🎯 Précision pour <span>la classe 'Pneumonie virale' :{" "}
+                83%</span>
               </strong>
             </li>
             <li>
-              <strong>
-                ⚡ Le modèle a une <span>très faible latence</span>.
-              </strong>
               <img
                 src="/static/langsmith.png"
                 className="w-full h-auto rounded mt-3 border border-gray-100 rounded-sm"
@@ -362,7 +352,7 @@ export default function Index() {
               </CardDescription>
             </li>
           </ul>
-          <p>Et voilà.</p>
+          <p>Ce POC démontre la puissance de la méthode mais mériterait un modèle plus puissant pour viser une précision plus élevée.</p>
           <CardTitle
             variant="h3"
             className="mt-12 max-w-xl mx-auto text-center"
