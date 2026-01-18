@@ -1,41 +1,61 @@
 # Pneumonia Diagnostic Assistant
 
-Projet démo pour détecter la pneumonie à partir de radiographies (3 classes : Normal, Pneumonie bactérienne, Pneumonie virale).
+App **fullstack** pour détecter la pneumonie à partir de radiographies.
+Classes : **Normal**, **Pneumonie bactérienne**, **Pneumonie virale**.
 
-## Prérequis
-- Python 3.11+
-- Node.js 20+ et pnpm
-- uv
+## 🔍 Principe
 
-## Installation
+Ce projet repose sur un **transfer learning** d’un modèle ResNet18 :
 
+- **Modèle de base** : ResNet18 (ImageNet)
+- **Méthode** : fine‑tuning du classifieur
+- **Dataset** : environ 450 radiographies (3 classes)
+- **Objectif** : modèle léger, rapide et exploitable en prod
+
+## 🧠 Inference
+
+L’inférence se fait via **ONNX Runtime** pour réduire la latence.
+
+Le script `backend/inference_onnx.py` génère aussi une **heatmap Grad‑CAM**.
+
+## 📦 Installation
+
+### Backend
 ```bash
 uv sync
 ```
 
+### Frontend
 ```bash
 cd frontend
 pnpm install
 ```
 
-## Lancer en local
+## ▶️ Lancer en local
 
-Backend :
+### Backend
 ```bash
 python manage.py runserver 0.0.0.0:8000
 ```
 
-Frontend :
+### Frontend
 ```bash
 cd frontend
 pnpm run dev
 ```
 
-## Conversion ONNX
+## 🧪 Conversion ONNX
+
 ```bash
 python convert_to_onnx.py
 ```
 
-## Notes
-- Le modèle ONNX se trouve dans `backend/model/`.
-- Les images d’exemple sont dans `static/`.
+## 📁 Arborescence utile
+
+- Modèle ONNX : `backend/model/`
+- Images d’exemple : `static/`
+
+## 📄 Notes
+
+Ce projet est une **démo technique**. Les performances varient selon le jeu de données
+et ne remplacent pas une validation clinique.
