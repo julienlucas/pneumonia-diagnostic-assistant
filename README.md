@@ -16,7 +16,7 @@ Ce projet repose sur un **transfer learning** d’un modèle ResNet18 :
 
 L’inférence se fait via **ONNX Runtime** pour réduire la latence.
 
-Le script `backend/inference_onnx.py` génère aussi une **heatmap Grad‑CAM**.
+Le script `backend/inference.py` génère aussi une **heatmap Grad‑CAM**.
 
 ## 📦 Installation
 

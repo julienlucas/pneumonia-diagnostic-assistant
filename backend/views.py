@@ -25,7 +25,7 @@ os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
 os.environ["LANGCHAIN_PROJECT"] = "pneumonia-diagnostic-assistant"
 
 try:
-    from .inference_onnx import get_onnx_session, get_pytorch_model
+    from .inference import get_onnx_session, get_pytorch_model
     get_onnx_session()
     get_pytorch_model()
 except Exception as exc:
@@ -77,7 +77,7 @@ def inference_api(request):
     try:
         import base64
         import time
-        from .inference_onnx import predict_with_gradcam
+        from .inference import predict_with_gradcam
 
         file = request.FILES['file']
         contents = file.read()
