@@ -65,6 +65,39 @@ def draw_label(pil_image, text, rgb_color):
     color_img = Image.new("RGBA", (render_w, render_h), rgb_color + (255,))
     pil_image.paste(color_img, (12, 12), mask)
 
+
+def apply_fake_heatmap(pil_image, pred_class, intensity=0.3):
+    """
+    Applique un effet visuel style heatmap basé sur la prédiction.
+    Crée un gradient radial coloré selon le diagnostic.
+    """
+    w, h = pil_image.size
+    img_array = np.array(pil_image, dtype=np.float32)
+
+    # Couleurs selon le diagnostic (BGR pour cv2, puis RGB)
+    color_map = {
+        "NORMAL": (100, 200, 100),        # Vert doux
+        "VIRAL_PNEUMONIA": (200, 80, 80),  # Rouge
+        "BACTERIAL_PNEUMONIA": (220, 150, 50),  # Orange
+    }
+    tint_color = np.array(color_map.get(pred_class, (150, 150, 200)), dtype=np.float32)
+
+    # Créer un gradient radial (plus intense au centre)
+    y, x = np.ogrid[:h, :w]
+    center_x, center_y = w // 2, h // 2
+    # Distance normalisée du centre (0 au centre, 1 aux bords)
+    dist = np.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+    max_dist = np.sqrt(center_x ** 2 + center_y ** 2)
+    gradient = 1 - (dist / max_dist)  # 1 au centre, 0 aux bords
+    gradient = np.clip(gradient, 0.3, 1.0)  # Limiter l'effet aux bords
+    gradient = gradient[:, :, np.newaxis]  # Shape (h, w, 1)
+
+    # Appliquer la teinte avec le gradient
+    tinted = img_array * (1 - intensity * gradient) + tint_color * intensity * gradient
+    tinted = np.clip(tinted, 0, 255).astype(np.uint8)
+
+    return Image.fromarray(tinted)
+
 def get_pytorch_model():
     global _pytorch_model
     if _pytorch_model is None:
@@ -122,9 +155,8 @@ class GradCAM:
         cam /= cam.max().clamp_min(1e-8)
         return cam.detach().cpu().numpy(), class_idx
 
-def predict_with_saliency(pil_image):
+def predict_with_saliency(pil_image, enable_gradcam=False):
     session = get_onnx_session()
-    model = get_pytorch_model()
 
     w, h = pil_image.size
 
@@ -150,49 +182,54 @@ def predict_with_saliency(pil_image):
     normal_conf = float(probs[1].item())
     viral_conf = float(probs[2].item())
 
-    input_tensor = torch.from_numpy(img_array).unsqueeze(0)
-    input_tensor.requires_grad = True
+    if enable_gradcam:
+        model = get_pytorch_model()
 
-    if hasattr(model, 'layer4'):
-        target_layer = model.layer4[-1].conv2
-    else:
-        for name, module in model.named_modules():
-            if 'layer4' in name and 'conv2' in name and len(name.split('.')) == 3:
-                target_layer = module
-                break
+        input_tensor = torch.from_numpy(img_array).unsqueeze(0)
+        input_tensor.requires_grad = True
+
+        if hasattr(model, 'layer4'):
+            target_layer = model.layer4[-1].conv2
         else:
-            target_layer = list(model.named_modules())[-10][1]
+            for name, module in model.named_modules():
+                if 'layer4' in name and 'conv2' in name and len(name.split('.')) == 3:
+                    target_layer = module
+                    break
+            else:
+                target_layer = list(model.named_modules())[-10][1]
 
-    grad_cam = GradCAM(model, target_layer)
-    heatmap_small, _ = grad_cam(input_tensor, pred_idx)
+        grad_cam = GradCAM(model, target_layer)
+        heatmap_small, _ = grad_cam(input_tensor, pred_idx)
 
-    img_display = np.array(pil_image)
-    heatmap_resized = cv2.resize(heatmap_small, (w, h))
+        img_display = np.array(pil_image)
+        heatmap_resized = cv2.resize(heatmap_small, (w, h))
 
-    heatmap_color = cv2.applyColorMap(
-        np.uint8(255 * heatmap_resized),
-        cv2.COLORMAP_JET,
-    )
-    heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
-    superimposed = cv2.addWeighted(
-        (img_display).astype(np.uint8),
-        0.6,
-        heatmap_color,
-        0.4,
-        0,
-    )
+        heatmap_color = cv2.applyColorMap(
+            np.uint8(255 * heatmap_resized),
+            cv2.COLORMAP_JET,
+        )
+        heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+        superimposed = cv2.addWeighted(
+            (img_display).astype(np.uint8),
+            0.6,
+            heatmap_color,
+            0.4,
+            0,
+        )
+        result_img = Image.fromarray(superimposed)
+    else:
+        # Effet visuel style heatmap (sans GradCAM)
+        result_img = apply_fake_heatmap(pil_image, pred_class, intensity=0.25)
 
-    result_img = Image.fromarray(superimposed)
     draw_label(result_img, f"{pred_label} ({conf * 100:.1f}%)", text_color)
 
     return result_img, pred_label, conf, normal_conf, bacterial_conf, viral_conf
 
-def predict_with_gradcam(pil_image):
-    return predict_with_saliency(pil_image)
+def predict_with_gradcam(pil_image, enable_gradcam=False):
+    return predict_with_saliency(pil_image, enable_gradcam=enable_gradcam)
 
-def predict_and_draw_saliency(image_path):
+def predict_and_draw_saliency(image_path, enable_gradcam=False):
     session = get_onnx_session()
-    model = get_pytorch_model()
     pil_image = Image.open(image_path).convert("RGB")
     w, h = pil_image.size
 
@@ -209,41 +246,49 @@ def predict_and_draw_saliency(image_path):
     probs = torch.softmax(torch.from_numpy(logits), dim=0)
     pred_idx = int(probs.argmax().item())
 
-    input_tensor = torch.from_numpy(img_array).unsqueeze(0)
-    input_tensor.requires_grad = True
-
-    if hasattr(model, 'layer4'):
-        target_layer = model.layer4[-1].conv2
-    else:
-        for name, module in model.named_modules():
-            if 'layer4' in name and 'conv2' in name and len(name.split('.')) == 3:
-                target_layer = module
-                break
-        else:
-            target_layer = list(model.named_modules())[-10][1]
-
-    grad_cam = GradCAM(model, target_layer)
-    heatmap_small, _ = grad_cam(input_tensor, pred_idx)
-
-    img_display = np.array(pil_image)
-    heatmap_resized = cv2.resize(heatmap_small, (w, h))
-
-    heatmap_color = cv2.applyColorMap(
-        np.uint8(255 * heatmap_resized),
-        cv2.COLORMAP_JET,
-    )
-    heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
-    superimposed = cv2.addWeighted(
-        (img_display).astype(np.uint8),
-        0.6,
-        heatmap_color,
-        0.4,
-        0,
-    )
     pred_class = CLASS_NAMES[pred_idx]
     pred_label = CLASS_LABELS.get(pred_class, pred_class)
     text_color = LABEL_COLORS.get(pred_class, (255, 255, 255))
-    result_img = Image.fromarray(superimposed)
+
+    if enable_gradcam:
+        model = get_pytorch_model()
+
+        input_tensor = torch.from_numpy(img_array).unsqueeze(0)
+        input_tensor.requires_grad = True
+
+        if hasattr(model, 'layer4'):
+            target_layer = model.layer4[-1].conv2
+        else:
+            for name, module in model.named_modules():
+                if 'layer4' in name and 'conv2' in name and len(name.split('.')) == 3:
+                    target_layer = module
+                    break
+            else:
+                target_layer = list(model.named_modules())[-10][1]
+
+        grad_cam = GradCAM(model, target_layer)
+        heatmap_small, _ = grad_cam(input_tensor, pred_idx)
+
+        img_display = np.array(pil_image)
+        heatmap_resized = cv2.resize(heatmap_small, (w, h))
+
+        heatmap_color = cv2.applyColorMap(
+            np.uint8(255 * heatmap_resized),
+            cv2.COLORMAP_JET,
+        )
+        heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+        superimposed = cv2.addWeighted(
+            (img_display).astype(np.uint8),
+            0.6,
+            heatmap_color,
+            0.4,
+            0,
+        )
+        result_img = Image.fromarray(superimposed)
+    else:
+        # Effet visuel style heatmap (sans GradCAM)
+        result_img = apply_fake_heatmap(pil_image, pred_class, intensity=0.25)
+
     draw_label(result_img, f"{pred_label} ({float(probs[pred_idx].item()) * 100:.1f}%)", text_color)
 
     return result_img, CLASS_NAMES[pred_idx], float(probs[pred_idx].item())
