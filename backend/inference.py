@@ -7,7 +7,7 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image, ImageDraw, ImageFont
 
-import training.utils.helper_utils as helper_utils
+helper_utils = None  # Lazy import pour éviter erreur en production
 
 # Modèle FP32 pour GradCAM (nécessite les gradients)
 PTH_MODEL_PATH = "./models/best_90_resnet18_chest_xray_classifier_weights_pruned.pth"
@@ -113,6 +113,11 @@ def get_onnx_session():
 
 def load_resnet18_model(weights_path, num_classes=3):
     """Charge le modèle FP32 pour GradCAM."""
+    global helper_utils
+    if helper_utils is None:
+        import training.utils.helper_utils as helper_utils_module
+        helper_utils = helper_utils_module
+
     state = torch.load(weights_path, map_location="cpu", weights_only=True)
     state = state.get("model_state_dict", state.get("state_dict", state))
 
