@@ -1,0 +1,6 @@
+{
+  "buildCommand": "rm -rf frontend/public/static && cp -r static frontend/public/static && cd frontend && pnpm install && pnpm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": "vite",
+  "installCommand": "echo 'Skipping root install'"
+}

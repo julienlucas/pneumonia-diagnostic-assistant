@@ -113,7 +113,8 @@ export default function Index() {
 
       body.append("file", fileToUpload);
 
-      const response = await fetch('/api/inference', {
+      const apiUrl = import.meta.env.RAILWAY_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/inference`, {
         method: 'POST',
         body
       });
@@ -244,7 +245,7 @@ export default function Index() {
       <Card className="mt-12 border-none mx-auto shadow-none">
         <CardContent className="p-0 border-none">
           <CardTitle variant="h4">
-            Testez avec une de ces images (correctement détectées)
+            Testez avec une de ces images
           </CardTitle>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
             {exampleImages.map((img) => (

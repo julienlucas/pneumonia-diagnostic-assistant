@@ -1,0 +1,23 @@
+# Frontend (deployed separately on Vercel)
+frontend/
+
+# Training data and environments
+training/
+.venv/
+**/.venv/
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Misc
+*.md
+.env.local
