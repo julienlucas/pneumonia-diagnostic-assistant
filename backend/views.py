@@ -138,6 +138,8 @@ def inference_api(request):
             except Exception as exc:
                 logger.error(f"Erreur LangSmith create_run (success): {str(exc)}")
 
+
+        logger.info(f"Réponse de l'API d'inférence: {response}")
         return response
 
     except Exception as e:
