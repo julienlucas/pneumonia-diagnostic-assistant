@@ -159,8 +159,7 @@ export default function Index() {
           <br />
           Testé sur 450 radiographies
           <br />
-          Précision: 85% (pourtant sans optimisation et avec un modèle simple
-          datant de 2015)
+          Précision: 89%
         </CardDescription>
       </CardHeader>
       <Card className="border-none shadow-none">
@@ -170,7 +169,7 @@ export default function Index() {
               className={cn(
                 "relative w-full flex-1 bg-gray-100 border-2 border-dashed rounded-sm text-center transition-colors flex flex-col",
                 "border-upload-border hover:border-primary",
-                preview ? "p-1" : "p-4 items-center justify-center"
+                preview ? "p-1" : "p-4 items-center justify-center",
               )}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
@@ -244,9 +243,7 @@ export default function Index() {
 
       <Card className="mt-12 border-none mx-auto shadow-none">
         <CardContent className="p-0 border-none">
-          <CardTitle variant="h4">
-            Testez avec une de ces images
-          </CardTitle>
+          <CardTitle variant="h4">Testez avec une de ces images</CardTitle>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
             {exampleImages.map((img) => (
               <div
@@ -255,7 +252,7 @@ export default function Index() {
                   "relative h-40 cursor-pointer rounded-md overflow-hidden transition-all hover:opacity-80",
                   selectedExampleImage === img.value
                     ? "border-primary ring-2 ring-primary"
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-gray-200 hover:border-gray-300",
                 )}
                 onClick={() => setPreview(img.value)}
               >
@@ -291,56 +288,79 @@ export default function Index() {
           </CardTitle>
           <CardTitle variant="h3" className="font-medium">
             Détecter les signes de pneumonie et leur degrès de viralité malgrés
-            un jeu de données peu éttoffé en radiographies
+            un jeu de données peu étoffé en radiographies
           </CardTitle>
           <ul className="list-disc list-inside mb-4 space-y-4">
             <li>
-              <strong>Détecter les pneumonies de patients</strong>{" "}
-              selon leur degrès de viralité sur les radiographies.
-            </li>
-            <li>
-              <strong>Entraîner un modèle rapidement rapidement à moindre coût.</strong> Réutiliser les
-              connaissances pré-existantes d'un modèle de vision et l'adapter à la détection de pneumonies.
-            </li>
-            <li>
-              <strong>Avoir un modèle faible latence.</strong> Doit pouvoir
-              fonctionner sur un mobile.
+              <strong>Détecter les pneumonies de patients</strong> selon leur
+              degrès de viralité sur les radiographies.
             </li>
             <li>
               <strong>
-                Avoir un modèle suffisament précis malgrés avec un jeu de données peu étoffé
-              </strong>
+                Entraîner un modèle rapidement et à moindre coûts
+                d'entraînement.
+              </strong>{" "}
+              Pour ça réutiliser les connaissances pré-existantes d'un modèle de
+              vision et l'adapter à la détection de pneumonies.
+            </li>
+            <li>
+              <strong>
+                Entraîné un modèle faible latence et de léger pouvant
+                fonctionner même sur smartphone et suffisament précis
+              </strong>{" "}
+              malgrés un jeu de données d'entraînement peu étoffé en
+              radiographies.
             </li>
           </ul>
           <CardTitle variant="h3-card">Résultats et évaluation</CardTitle>
           <ul className="list-inside mb-4 space-y-4">
             <li>
               <strong>
-                ⌛ <span>Entraînement en seulement 2 minutes</span> et avec un hardware peu conséquent, seulement mon Mac Book Pro M1
-              </strong>. Et juste en 1 seule passe sur le jeu de données!
+                ⌛ 1er entraînement d'un modèle très léger en juste{" "}
+                <span>2 minutes pour atteindre 85% de précision</span>
+              </strong>{" "}
+              seulement avec un Mac Book Pro M1 . Et 1 seule passe sur le jeu de
+              données!
             </li>
             <li>
               <strong>
-                🧠 <span>Méthode de fine-tuning rapide d'un modèlé peu gourmand en ressources</span>, le
-                par Transfer Learning
-              </strong>. Réseau de neurones dense utile sur les petits jeux de données. Tuning de la dernière couche du modèle, uniquement le classifieur
-              pour un entraînement apportant un maximum de résultats rapidement.
+                📊 Puis test de meilleurs hyperparamètres d'entraîment
+              </strong>{" "}
+              avec Optuna pour chercher comment atteindre une meilleure
+              précision.
             </li>
             <li>
               <strong>
-                🎯 Au final facilement et sans optimisation du modèle, précision pour <span>la classe 'Pneumonie bactérienne' :{" "}
-                89%</span>
+                🧠 Puis re fine-tuning pour attendre 89% de précision
+                <span>
+                  par Transfer Learning et dégèle progréssif de couches.
+                </span>
+              </strong>
+              D'abord juste la dernière couche, le classifieur pour un maximum
+              de résultats rapides, puis dégèle progréssif.
+            </li>
+            <li>
+              <strong>
+                🎯 Au final précision pour la classe{" "}
+                <span>Pneumonie bactérienne : 93%</span>
               </strong>
             </li>
             <li>
               <strong>
-                🎯 Précision pour <span>la classe 'Normal' : 75%</span>
+                🎯 Précision pour la classe <span>Normal : 83%</span>
               </strong>
             </li>
             <li>
               <strong>
-                🎯 Précision pour <span>la classe 'Pneumonie virale' :{" "}
-                83%</span>
+                🎯 Précision pour la classe <span>Pneumonie virale : 88%</span>
+              </strong>
+            </li>
+            <li>
+              <strong>
+                🏆 Ainsi qu'une faible latence du modèle et taille divisé par 4{" "}
+                <span>
+                  de 45mo à 10mo après prunning et quantization 8bits.
+                </span>
               </strong>
             </li>
             <li>
@@ -353,7 +373,14 @@ export default function Index() {
               </CardDescription>
             </li>
           </ul>
-          <p>Ce POC démontre la puissance de la méthode mais mériterait un modèle plus puissant pour viser une précision plus élevée.</p>
+          <p>
+            Ce cas démontre qu'il est possible d'atteindre une précision élevée
+            rapidement avec un modèle très léger de moins de 50mo pouvant
+            fonctionner sur un smartphone.
+            <br />
+            <br />
+            Améliorations de la précision possible avec plus de recherches d'entraînement/post training.
+          </p>
           <CardTitle
             variant="h3"
             className="mt-12 max-w-xl mx-auto text-center"

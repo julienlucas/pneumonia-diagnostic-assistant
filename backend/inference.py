@@ -1,16 +1,17 @@
 import os
-import cv2
 import argparse
-import torch
-import torch.nn as nn
 import numpy as np
 import onnxruntime as ort
 from PIL import Image, ImageDraw, ImageFont
 
-helper_utils = None  # Lazy import pour éviter erreur en production
+# === Imports conditionnels pour GradCAM (désactivé en prod) ===
+# import cv2
+# import torch
+# import torch.nn as nn
+# helper_utils = None  # Lazy import pour GradCAM
 
-# Modèle FP32 pour GradCAM (nécessite les gradients)
-PTH_MODEL_PATH = "./models/best_90_resnet18_chest_xray_classifier_weights_pruned.pth"
+# Modèle FP32 pour GradCAM (désactivé en prod)
+# PTH_MODEL_PATH = "./models/best_90_resnet18_chest_xray_classifier_weights_pruned.pth"
 # Modèle ONNX INT8 pour l'inférence (rapide)
 ONNX_MODEL_PATH = "./models/quantized_int8_resnet18_chest_xray_weights.onnx"
 
@@ -26,13 +27,18 @@ LABEL_COLORS = {
     "BACTERIAL_PNEUMONIA": (255, 165, 0),
 }
 
+def softmax_np(x):
+    """Softmax numpy (remplace torch.softmax pour éviter la dépendance torch en prod)"""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
 FONT_CANDIDATES = [
     "/System/Library/Fonts/Supplemental/Arial.ttf",
     "/Library/Fonts/Arial.ttf",
 ]
 
 _onnx_session = None
-_pytorch_model = None
+# _pytorch_model = None  # GradCAM désactivé
 
 def load_fixed_font(width):
     font_size = max(18, int(width * 0.02734))
@@ -98,12 +104,13 @@ def apply_fake_heatmap(pil_image, pred_class, intensity=0.3):
 
     return Image.fromarray(tinted)
 
-def get_pytorch_model():
-    global _pytorch_model
-    if _pytorch_model is None:
-        _pytorch_model = load_resnet18_model(PTH_MODEL_PATH, num_classes=len(CLASS_NAMES))
-        _pytorch_model.eval()
-    return _pytorch_model
+# === GradCAM (désactivé en prod - décommenter si besoin) ===
+# def get_pytorch_model():
+#     global _pytorch_model
+#     if _pytorch_model is None:
+#         _pytorch_model = load_resnet18_model(PTH_MODEL_PATH, num_classes=len(CLASS_NAMES))
+#         _pytorch_model.eval()
+#     return _pytorch_model
 
 def get_onnx_session():
     global _onnx_session
@@ -111,54 +118,55 @@ def get_onnx_session():
         _onnx_session = ort.InferenceSession(ONNX_MODEL_PATH)
     return _onnx_session
 
-def load_resnet18_model(weights_path, num_classes=3):
-    """Charge le modèle FP32 pour GradCAM."""
-    global helper_utils
-    if helper_utils is None:
-        import training.utils.helper_utils as helper_utils_module
-        helper_utils = helper_utils_module
-
-    state = torch.load(weights_path, map_location="cpu", weights_only=True)
-    state = state.get("model_state_dict", state.get("state_dict", state))
-
-    state = {
-        (k[6:] if k.startswith("model.") else k[7:] if k.startswith("module.") else k): v
-        for k, v in state.items()
-        if not k.startswith("loss_fn.")
-    }
-
-    model = helper_utils.resnet18_qat_ready_pretrained(num_classes=num_classes, use_quant_stubs=False)
-    model.load_state_dict(state, strict=False)
-    return model
-
-
-class GradCAM:
-    def __init__(self, model: nn.Module, target_layer: nn.Module):
-        self.model = model
-        self.target_layer = target_layer
-        self.activations = None
-        self.gradients = None
-        self.target_layer.register_forward_hook(self._on_forward)
-
-    def _on_forward(self, _module, _inputs, output):
-        self.activations = output.detach()
-        def _on_backward(grad):
-            self.gradients = grad.detach()
-        output.register_hook(_on_backward)
-
-    def __call__(self, x: torch.Tensor, class_idx: int | None = None):
-        self.model.zero_grad(set_to_none=True)
-        output = self.model(x)
-        if class_idx is None:
-            class_idx = int(output.argmax(dim=1).item())
-        score = output[:, class_idx].sum()
-        score.backward()
-        weights = self.gradients.mean(dim=(2, 3), keepdim=True)
-        cam = (weights * self.activations).sum(dim=1, keepdim=False)
-        cam = cam.relu()[0]
-        cam -= cam.min()
-        cam /= cam.max().clamp_min(1e-8)
-        return cam.detach().cpu().numpy(), class_idx
+# def load_resnet18_model(weights_path, num_classes=3):
+#     """Charge le modèle FP32 pour GradCAM."""
+#     global helper_utils
+#     if helper_utils is None:
+#         import training.utils.helper_utils as helper_utils_module
+#         helper_utils = helper_utils_module
+#
+#     state = torch.load(weights_path, map_location="cpu", weights_only=True)
+#     state = state.get("model_state_dict", state.get("state_dict", state))
+#
+#     state = {
+#         (k[6:] if k.startswith("model.") else k[7:] if k.startswith("module.") else k): v
+#         for k, v in state.items()
+#         if not k.startswith("loss_fn.")
+#     }
+#
+#     model = helper_utils.resnet18_qat_ready_pretrained(num_classes=num_classes, use_quant_stubs=False)
+#     model.load_state_dict(state, strict=False)
+#     return model
+#
+#
+# class GradCAM:
+#     def __init__(self, model: nn.Module, target_layer: nn.Module):
+#         self.model = model
+#         self.target_layer = target_layer
+#         self.activations = None
+#         self.gradients = None
+#         self.target_layer.register_forward_hook(self._on_forward)
+#
+#     def _on_forward(self, _module, _inputs, output):
+#         self.activations = output.detach()
+#         def _on_backward(grad):
+#             self.gradients = grad.detach()
+#         output.register_hook(_on_backward)
+#
+#     def __call__(self, x: torch.Tensor, class_idx: int | None = None):
+#         self.model.zero_grad(set_to_none=True)
+#         output = self.model(x)
+#         if class_idx is None:
+#             class_idx = int(output.argmax(dim=1).item())
+#         score = output[:, class_idx].sum()
+#         score.backward()
+#         weights = self.gradients.mean(dim=(2, 3), keepdim=True)
+#         cam = (weights * self.activations).sum(dim=1, keepdim=False)
+#         cam = cam.relu()[0]
+#         cam -= cam.min()
+#         cam /= cam.max().clamp_min(1e-8)
+#         return cam.detach().cpu().numpy(), class_idx
+# === Fin GradCAM ===
 
 def predict_with_saliency(pil_image, enable_gradcam=False):
     session = get_onnx_session()
@@ -175,56 +183,43 @@ def predict_with_saliency(pil_image, enable_gradcam=False):
 
     outputs = session.run(None, {"input": img_array[np.newaxis, ...]})
     logits = outputs[0][0] if outputs[0].ndim == 2 else outputs[0]
-    probs = torch.softmax(torch.from_numpy(logits), dim=0)
-    pred_idx = int(probs.argmax().item())
+    probs = softmax_np(logits)
+    pred_idx = int(np.argmax(probs))
 
     pred_class = CLASS_NAMES[pred_idx]
     pred_label = CLASS_LABELS.get(pred_class, pred_class)
     text_color = LABEL_COLORS.get(pred_class, (255, 255, 255))
-    conf = float(probs[pred_idx].item())
+    conf = float(probs[pred_idx])
 
-    bacterial_conf = float(probs[0].item())
-    normal_conf = float(probs[1].item())
-    viral_conf = float(probs[2].item())
+    bacterial_conf = float(probs[0])
+    normal_conf = float(probs[1])
+    viral_conf = float(probs[2])
 
-    if enable_gradcam:
-        model = get_pytorch_model()
-
-        input_tensor = torch.from_numpy(img_array).unsqueeze(0)
-        input_tensor.requires_grad = True
-
-        if hasattr(model, 'layer4'):
-            target_layer = model.layer4[-1].conv2
-        else:
-            for name, module in model.named_modules():
-                if 'layer4' in name and 'conv2' in name and len(name.split('.')) == 3:
-                    target_layer = module
-                    break
-            else:
-                target_layer = list(model.named_modules())[-10][1]
-
-        grad_cam = GradCAM(model, target_layer)
-        heatmap_small, _ = grad_cam(input_tensor, pred_idx)
-
-        img_display = np.array(pil_image)
-        heatmap_resized = cv2.resize(heatmap_small, (w, h))
-
-        heatmap_color = cv2.applyColorMap(
-            np.uint8(255 * heatmap_resized),
-            cv2.COLORMAP_JET,
-        )
-        heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
-        superimposed = cv2.addWeighted(
-            (img_display).astype(np.uint8),
-            0.6,
-            heatmap_color,
-            0.4,
-            0,
-        )
-        result_img = Image.fromarray(superimposed)
-    else:
-        # Effet visuel style heatmap (sans GradCAM)
-        result_img = apply_fake_heatmap(pil_image, pred_class, intensity=0.25)
+    # === GradCAM désactivé en prod (décommenter imports torch/cv2 + classes ci-dessus pour réactiver) ===
+    # if enable_gradcam:
+    #     model = get_pytorch_model()
+    #     input_tensor = torch.from_numpy(img_array).unsqueeze(0)
+    #     input_tensor.requires_grad = True
+    #     if hasattr(model, 'layer4'):
+    #         target_layer = model.layer4[-1].conv2
+    #     else:
+    #         for name, module in model.named_modules():
+    #             if 'layer4' in name and 'conv2' in name and len(name.split('.')) == 3:
+    #                 target_layer = module
+    #                 break
+    #         else:
+    #             target_layer = list(model.named_modules())[-10][1]
+    #     grad_cam = GradCAM(model, target_layer)
+    #     heatmap_small, _ = grad_cam(input_tensor, pred_idx)
+    #     img_display = np.array(pil_image)
+    #     heatmap_resized = cv2.resize(heatmap_small, (w, h))
+    #     heatmap_color = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
+    #     heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+    #     superimposed = cv2.addWeighted((img_display).astype(np.uint8), 0.6, heatmap_color, 0.4, 0)
+    #     result_img = Image.fromarray(superimposed)
+    # else:
+    # Effet visuel style heatmap (sans GradCAM)
+    result_img = apply_fake_heatmap(pil_image, pred_class, intensity=0.25)
 
     draw_label(result_img, f"{pred_label} ({conf * 100:.1f}%)", text_color)
 
@@ -248,55 +243,42 @@ def predict_and_draw_saliency(image_path, enable_gradcam=False):
 
     outputs = session.run(None, {"input": img_array[np.newaxis, ...]})
     logits = outputs[0][0] if outputs[0].ndim == 2 else outputs[0]
-    probs = torch.softmax(torch.from_numpy(logits), dim=0)
-    pred_idx = int(probs.argmax().item())
+    probs = softmax_np(logits)
+    pred_idx = int(np.argmax(probs))
 
     pred_class = CLASS_NAMES[pred_idx]
     pred_label = CLASS_LABELS.get(pred_class, pred_class)
     text_color = LABEL_COLORS.get(pred_class, (255, 255, 255))
 
-    if enable_gradcam:
-        model = get_pytorch_model()
+    # === GradCAM désactivé en prod ===
+    # if enable_gradcam:
+    #     model = get_pytorch_model()
+    #     input_tensor = torch.from_numpy(img_array).unsqueeze(0)
+    #     input_tensor.requires_grad = True
+    #     if hasattr(model, 'layer4'):
+    #         target_layer = model.layer4[-1].conv2
+    #     else:
+    #         for name, module in model.named_modules():
+    #             if 'layer4' in name and 'conv2' in name and len(name.split('.')) == 3:
+    #                 target_layer = module
+    #                 break
+    #         else:
+    #             target_layer = list(model.named_modules())[-10][1]
+    #     grad_cam = GradCAM(model, target_layer)
+    #     heatmap_small, _ = grad_cam(input_tensor, pred_idx)
+    #     img_display = np.array(pil_image)
+    #     heatmap_resized = cv2.resize(heatmap_small, (w, h))
+    #     heatmap_color = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
+    #     heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+    #     superimposed = cv2.addWeighted((img_display).astype(np.uint8), 0.6, heatmap_color, 0.4, 0)
+    #     result_img = Image.fromarray(superimposed)
+    # else:
+    # Effet visuel style heatmap (sans GradCAM)
+    result_img = apply_fake_heatmap(pil_image, pred_class, intensity=0.25)
 
-        input_tensor = torch.from_numpy(img_array).unsqueeze(0)
-        input_tensor.requires_grad = True
+    draw_label(result_img, f"{pred_label} ({float(probs[pred_idx]) * 100:.1f}%)", text_color)
 
-        if hasattr(model, 'layer4'):
-            target_layer = model.layer4[-1].conv2
-        else:
-            for name, module in model.named_modules():
-                if 'layer4' in name and 'conv2' in name and len(name.split('.')) == 3:
-                    target_layer = module
-                    break
-            else:
-                target_layer = list(model.named_modules())[-10][1]
-
-        grad_cam = GradCAM(model, target_layer)
-        heatmap_small, _ = grad_cam(input_tensor, pred_idx)
-
-        img_display = np.array(pil_image)
-        heatmap_resized = cv2.resize(heatmap_small, (w, h))
-
-        heatmap_color = cv2.applyColorMap(
-            np.uint8(255 * heatmap_resized),
-            cv2.COLORMAP_JET,
-        )
-        heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
-        superimposed = cv2.addWeighted(
-            (img_display).astype(np.uint8),
-            0.6,
-            heatmap_color,
-            0.4,
-            0,
-        )
-        result_img = Image.fromarray(superimposed)
-    else:
-        # Effet visuel style heatmap (sans GradCAM)
-        result_img = apply_fake_heatmap(pil_image, pred_class, intensity=0.25)
-
-    draw_label(result_img, f"{pred_label} ({float(probs[pred_idx].item()) * 100:.1f}%)", text_color)
-
-    return result_img, CLASS_NAMES[pred_idx], float(probs[pred_idx].item())
+    return result_img, CLASS_NAMES[pred_idx], float(probs[pred_idx])
 
 def main():
     parser = argparse.ArgumentParser(description="Prédit la classe d'une radiographie")

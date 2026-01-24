@@ -5,24 +5,29 @@ description = "Détecteur de deepfakes avec Grad-CAM"
 authors = [{name = "Julien Lucas", email = "hello@julienlucas.com"}]
 requires-python = ">=3.11,<3.13"
 dependencies = [
+    # === Production (inférence) ===
     "django>=5.2.6",
     "django-cors-headers>=4.3.0",
-    "dotenv>=0.9.9",
+    "python-dotenv>=1.1.1",
     "langsmith>=0.1.0",
-    "lightning",
-    "matplotlib",
     "numpy<2.0.0",
     "onnxruntime>=1.23.2",
-    "onnxscript>=0.5.7",
-    "opencv-python>=4.10.0.84",
-    "optuna>=4.7.0",
     "pillow>=11.0.0",
-    "python-dotenv>=1.1.1",
-    "seaborn",
-    "torch==2.10.0",
-    "torchmetrics>=1.8.2",
-    "torchvision>=0.15.0",
-    "tqdm>=4.67.1",
-    "uvicorn>=0.24",
-    "werkzeug>=1.0.1",
+
+    # === Training/Build (commenter en prod) ===
+    # "lightning",              # Entraînement PyTorch Lightning
+    # "matplotlib",             # Visualisation graphiques
+    # "onnxscript>=0.5.7",      # Conversion ONNX
+    # "opencv-python>=4.10.0.84", # GradCAM (désactivé)
+    # "optuna>=4.7.0",          # Optimisation hyperparamètres
+    # "seaborn",                # Visualisation
+    # "torch==2.10.0",          # PyTorch (GradCAM désactivé)
+    # "torchmetrics>=1.8.2",    # Métriques entraînement
+    # "torchvision>=0.15.0",    # Transforms/modèles (GradCAM désactivé)
+    # "tqdm>=4.67.1",           # Barres de progression
+
+    # === Inutilisés ===
+    # "dotenv>=0.9.9",          # Doublon avec python-dotenv
+    # "uvicorn>=0.24",          # Serveur ASGI (Django utilise gunicorn/wsgi)
+    # "werkzeug>=1.0.1",        # Utilitaire WSGI non nécessaire
 ]
