@@ -47,11 +47,8 @@ def _get_langsmith_client():
 def index(request):
     """Serve le frontend React"""
     try:
-        # Chercher le fichier HTML dans plusieurs chemins possibles
         possible_paths = [
             os.path.join(str(settings.BASE_DIR), 'frontend', 'dist', 'index.html'),
-            os.path.join(os.path.dirname(str(settings.BASE_DIR)), 'frontend', 'dist', 'index.html'),
-            '/var/task/frontend/dist/index.html',  # Chemin Vercel
             os.path.join(os.getcwd(), 'frontend', 'dist', 'index.html'),
         ]
 

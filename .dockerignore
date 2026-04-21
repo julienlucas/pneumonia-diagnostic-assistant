@@ -1,5 +1,6 @@
-# Frontend (deployed separately on Vercel)
-frontend/
+# Frontend build artifacts (rebuilt in Docker)
+frontend/node_modules/
+frontend/dist/
 
 # Training data and environments
 training/

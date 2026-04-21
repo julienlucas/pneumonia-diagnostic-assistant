@@ -74,13 +74,10 @@ AUTH_PASSWORD_VALIDATORS = [
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# CORS - Allow frontend on Vercel to call the API
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://localhost:5173",
 ]
-# Add your Vercel domain here, e.g.:
-# CORS_ALLOWED_ORIGINS += ["https://your-app.vercel.app"]
 import os
 if os.environ.get("CORS_ALLOWED_ORIGIN"):
     CORS_ALLOWED_ORIGINS.append(os.environ.get("CORS_ALLOWED_ORIGIN"))
